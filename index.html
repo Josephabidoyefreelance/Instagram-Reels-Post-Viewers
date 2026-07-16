@@ -1,0 +1,792 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LEON IG Dashboard Pro</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+/* ============ TOKENS ============ */
+:root{
+  --accent-1:#7C3AED;
+  --accent-2:#E1306C;
+  --accent-3:#F77737;
+  --gradient:linear-gradient(135deg,var(--accent-1) 0%,var(--accent-2) 55%,var(--accent-3) 100%);
+  --radius:14px;
+  --font-ui:'Inter',sans-serif;
+  --font-mono:'JetBrains Mono',monospace;
+}
+html[data-theme="dark"]{
+  --bg:#0D0D13;
+  --surface:#17171F;
+  --surface-2:#1D1D27;
+  --text:#F2F2F7;
+  --muted:#93939F;
+  --border:#26262F;
+  --shadow:0 8px 24px rgba(0,0,0,.35);
+}
+html[data-theme="light"]{
+  --bg:#F5F5FA;
+  --surface:#FFFFFF;
+  --surface-2:#FBFBFE;
+  --text:#14141C;
+  --muted:#68687A;
+  --border:#E6E6F0;
+  --shadow:0 8px 24px rgba(20,20,30,.08);
+}
+
+*{box-sizing:border-box;margin:0;padding:0;}
+body{
+  font-family:var(--font-ui);
+  background:var(--bg);
+  color:var(--text);
+  display:flex;
+  min-height:100vh;
+  transition:background .25s ease,color .25s ease;
+}
+
+/* ============ SIDEBAR ============ */
+.sidebar{
+  width:250px;
+  flex-shrink:0;
+  background:var(--surface);
+  border-right:1px solid var(--border);
+  padding:28px 18px;
+  display:flex;
+  flex-direction:column;
+  position:sticky;
+  top:0;
+  height:100vh;
+}
+.logo h1{
+  font-size:26px;
+  font-weight:800;
+  letter-spacing:.5px;
+  background:var(--gradient);
+  -webkit-background-clip:text;
+  background-clip:text;
+  color:transparent;
+}
+.logo p{
+  font-size:12px;
+  color:var(--muted);
+  margin-top:4px;
+  letter-spacing:.3px;
+}
+nav{margin-top:36px;display:flex;flex-direction:column;gap:4px;}
+nav a{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:11px 14px;
+  border-radius:10px;
+  color:var(--muted);
+  text-decoration:none;
+  font-size:14px;
+  font-weight:500;
+  border-left:3px solid transparent;
+  transition:background .15s ease,color .15s ease,border-color .15s ease;
+}
+nav a:hover{background:var(--surface-2);color:var(--text);}
+nav a.active{
+  color:var(--text);
+  background:var(--surface-2);
+  border-left:3px solid;
+  border-image:var(--gradient) 1;
+}
+.sidebar-footer{
+  margin-top:auto;
+  font-size:11px;
+  color:var(--muted);
+  line-height:1.5;
+  padding-top:20px;
+  border-top:1px solid var(--border);
+}
+
+/* ============ MAIN ============ */
+.main{flex:1;padding:32px 40px;max-width:1400px;}
+header{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  flex-wrap:wrap;
+  gap:16px;
+  margin-bottom:28px;
+}
+header h1{font-size:26px;font-weight:700;}
+header p{color:var(--muted);font-size:14px;margin-top:4px;}
+.headerButtons{display:flex;gap:10px;}
+button{
+  font-family:var(--font-ui);
+  cursor:pointer;
+  border:1px solid var(--border);
+  background:var(--surface);
+  color:var(--text);
+  padding:10px 16px;
+  border-radius:10px;
+  font-size:13px;
+  font-weight:500;
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  transition:transform .12s ease,border-color .15s ease,background .15s ease;
+}
+button:hover{border-color:var(--accent-2);transform:translateY(-1px);}
+button:active{transform:translateY(0);}
+button.primary{
+  background:var(--gradient);
+  color:#fff;
+  border:none;
+}
+button.primary:hover{filter:brightness(1.08);}
+button:disabled{opacity:.5;cursor:not-allowed;transform:none;}
+
+/* ============ VIEWS ============ */
+.view{display:none;}
+.view.active{display:block;animation:fadeIn .25s ease;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:translateY(0);}}
+
+/* ============ SEARCH ============ */
+.search-section{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  padding:22px 24px;
+  margin-bottom:24px;
+  box-shadow:var(--shadow);
+}
+.search-section h2{font-size:16px;font-weight:600;margin-bottom:14px;}
+.search-box{display:flex;gap:10px;}
+.search-box input{
+  flex:1;
+  padding:12px 14px;
+  border-radius:10px;
+  border:1px solid var(--border);
+  background:var(--surface-2);
+  color:var(--text);
+  font-size:14px;
+  font-family:var(--font-ui);
+}
+.search-box input:focus{outline:2px solid var(--accent-1);outline-offset:1px;}
+.small{color:var(--muted);font-size:12px;margin-top:12px;line-height:1.9;}
+.small b{color:var(--text);}
+
+.config-warning{
+  background:rgba(247,119,55,.1);
+  border:1px solid var(--accent-3);
+  color:var(--text);
+  border-radius:10px;
+  padding:12px 16px;
+  font-size:13px;
+  margin-bottom:20px;
+  display:none;
+}
+.config-warning.show{display:block;}
+.config-warning code{
+  font-family:var(--font-mono);
+  background:var(--surface-2);
+  padding:1px 6px;
+  border-radius:4px;
+  font-size:12px;
+}
+
+.status-line{font-size:13px;color:var(--muted);margin:10px 0 0;min-height:18px;}
+.status-line.error{color:var(--accent-2);}
+
+/* ============ CARDS / OVERVIEW ============ */
+.overview{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(160px,1fr));
+  gap:16px;
+  margin-bottom:28px;
+}
+.card{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  padding:18px 20px;
+  position:relative;
+  overflow:hidden;
+  box-shadow:var(--shadow);
+}
+.card::before{
+  content:"";
+  position:absolute;
+  top:0;left:0;right:0;
+  height:3px;
+  background:var(--gradient);
+}
+.card h3{font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;}
+.card h1{font-family:var(--font-mono);font-size:28px;font-weight:700;margin-top:8px;}
+
+/* ============ PROFILE GRID ============ */
+.section-title{font-size:15px;font-weight:600;margin:8px 0 14px;display:flex;align-items:center;justify-content:space-between;}
+.profiles-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(260px,1fr));
+  gap:16px;
+}
+.profile-card{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  padding:18px;
+  box-shadow:var(--shadow);
+}
+.profile-head{display:flex;align-items:center;gap:12px;}
+.avatar{
+  width:52px;height:52px;border-radius:50%;
+  background:var(--gradient);
+  display:flex;align-items:center;justify-content:center;
+  color:#fff;font-weight:700;font-size:16px;flex-shrink:0;
+  object-fit:cover;
+}
+.profile-name{font-weight:600;font-size:14px;}
+.profile-handle{color:var(--muted);font-size:12px;}
+.fav-btn{
+  margin-left:auto;
+  background:none;border:none;font-size:18px;padding:4px;color:var(--muted);
+}
+.fav-btn.active{color:var(--accent-3);}
+.profile-stats{display:flex;gap:16px;margin-top:14px;}
+.profile-stats div{flex:1;}
+.profile-stats span{display:block;font-family:var(--font-mono);font-weight:600;font-size:15px;}
+.profile-stats label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;}
+.badge{
+  display:inline-block;margin-top:12px;padding:3px 10px;border-radius:20px;
+  font-size:11px;font-weight:600;border:1px solid var(--border);color:var(--muted);
+}
+.badge.business{color:var(--accent-1);border-color:var(--accent-1);}
+.badge.creator{color:var(--accent-2);border-color:var(--accent-2);}
+.badge.personal{color:var(--accent-3);border-color:var(--accent-3);}
+.empty-state{
+  color:var(--muted);font-size:13px;text-align:center;padding:40px 0;
+  border:1px dashed var(--border);border-radius:var(--radius);
+}
+
+/* ============ ANALYTICS ============ */
+.chart-grid{display:grid;grid-template-columns:2fr 1fr;gap:20px;}
+.chart-card{
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+  padding:20px;box-shadow:var(--shadow);
+}
+.chart-card h3{font-size:14px;font-weight:600;margin-bottom:16px;}
+@media(max-width:900px){.chart-grid{grid-template-columns:1fr;}}
+
+/* ============ HISTORY / FAVOURITES LIST ============ */
+.list-row{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:14px 18px;background:var(--surface);border:1px solid var(--border);
+  border-radius:10px;margin-bottom:10px;
+}
+.list-row .left{display:flex;flex-direction:column;gap:2px;}
+.list-row .left b{font-size:13px;}
+.list-row .left span{font-size:11px;color:var(--muted);}
+.list-row .actions{display:flex;gap:8px;}
+.list-row .actions button{padding:6px 12px;font-size:12px;}
+
+/* ============ FOOTER ============ */
+footer{
+  margin-top:40px;padding-top:20px;border-top:1px solid var(--border);
+  text-align:center;color:var(--muted);font-size:12px;
+}
+
+@media(max-width:800px){
+  body{flex-direction:column;}
+  .sidebar{width:100%;height:auto;position:relative;}
+  .main{padding:24px;}
+}
+</style>
+</head>
+
+<body>
+
+<div class="sidebar">
+  <div class="logo">
+    <h1>LEON</h1>
+    <p>Instagram Dashboard Pro</p>
+  </div>
+  <nav>
+    <a href="#" class="active" id="navDashboard" data-view="dashboard">🏠 Dashboard</a>
+    <a href="#" id="navAnalytics" data-view="analytics">📈 Analytics</a>
+    <a href="#" id="navHistory" data-view="history">🕓 Search History</a>
+    <a href="#" id="navFavourite" data-view="favourites">⭐ Favourite Accounts</a>
+  </nav>
+  <div class="sidebar-footer">
+    Built for Leon by Joseph<br>© 2026 All rights reserved
+  </div>
+</div>
+
+<div class="main">
+
+  <header>
+    <div>
+      <h1>Instagram Dashboard</h1>
+      <p>Track Business, Creator &amp; Personal Instagram Accounts</p>
+    </div>
+    <div class="headerButtons">
+      <button id="themeBtn">🌙 Dark Mode</button>
+      <button id="clearBtn">🗑 Clear</button>
+    </div>
+  </header>
+
+  <div class="config-warning" id="configWarning">
+    ⚠ Apify isn't connected yet. Open this file and set <code>APIFY_TOKEN</code> and <code>APIFY_ACTOR_ID</code> near the top of the <code>&lt;script&gt;</code> block. Search will not return real data until both are filled in.
+  </div>
+
+  <!-- DASHBOARD VIEW -->
+  <section class="view active" id="view-dashboard">
+
+    <section class="search-section">
+      <h2>Search Instagram Profiles</h2>
+      <div class="search-box">
+        <input type="text" id="searchInput" placeholder="Enter usernames separated by commas or paste Instagram profile URLs">
+        <button class="primary" id="searchBtn">🔍 Search</button>
+      </div>
+      <p class="small">
+        Examples &nbsp; <b>nike</b> &nbsp;·&nbsp; <b>cristiano</b> &nbsp;·&nbsp; <b>@therock</b> &nbsp;·&nbsp; <b>https://instagram.com/nike</b>
+      </p>
+      <p class="status-line" id="statusLine"></p>
+    </section>
+
+    <section class="overview">
+      <div class="card"><h3>Total Profiles</h3><h1 id="totalProfiles">0</h1></div>
+      <div class="card"><h3>Total Followers</h3><h1 id="totalFollowers">0</h1></div>
+      <div class="card"><h3>Total Posts</h3><h1 id="totalPosts">0</h1></div>
+      <div class="card"><h3>Business</h3><h1 id="businessCount">0</h1></div>
+      <div class="card"><h3>Creator</h3><h1 id="creatorCount">0</h1></div>
+      <div class="card"><h3>Personal</h3><h1 id="personalCount">0</h1></div>
+    </section>
+
+    <div class="section-title">Results</div>
+    <div class="profiles-grid" id="profilesGrid">
+      <div class="empty-state">No profiles searched yet. Try searching a username above.</div>
+    </div>
+  </section>
+
+  <!-- ANALYTICS VIEW -->
+  <section class="view" id="view-analytics">
+    <div class="section-title">Analytics</div>
+    <div class="chart-grid">
+      <div class="chart-card">
+        <h3>Followers by Profile</h3>
+        <canvas id="followersChart" height="220"></canvas>
+      </div>
+      <div class="chart-card">
+        <h3>Account Type Breakdown</h3>
+        <canvas id="typeChart" height="220"></canvas>
+      </div>
+    </div>
+  </section>
+
+  <!-- SEARCH HISTORY VIEW -->
+  <section class="view" id="view-history">
+    <div class="section-title">Search History</div>
+    <div id="historyList"><div class="empty-state">No searches yet.</div></div>
+  </section>
+
+  <!-- FAVOURITE ACCOUNTS VIEW -->
+  <section class="view" id="view-favourites">
+    <div class="section-title">Favourite Accounts</div>
+    <div class="profiles-grid" id="favouritesGrid"><div class="empty-state">No favourites yet. Star a profile from the Dashboard.</div></div>
+  </section>
+
+  <footer>Built for Leon by Joseph, © 2026 All rights reserved</footer>
+</div>
+
+<script>
+/* =========================================================
+   CONFIG — fill these in with your real Apify credentials.
+   Console → Integrations for the token.
+   Actor ID looks like "username~actor-name" or a plain ID.
+   ========================================================= */
+const CONFIG = {
+  APIFY_TOKEN: "",        // <-- put your Apify API token here
+  APIFY_ACTOR_ID: "",     // <-- put your Instagram scraper actor ID here
+};
+
+/* NOTE: this calls Apify directly from the browser, so your token is
+   visible in devtools/network tab. Fine for local/internal use.
+   For anything public-facing, proxy this through a small backend
+   (like your existing Netlify function) instead of calling Apify
+   straight from client-side JS. */
+
+/* =========================================================
+   STATE
+   ========================================================= */
+const state = {
+  profiles: JSON.parse(sessionStorage.getItem('leon_profiles') || '[]'),
+  favourites: JSON.parse(localStorage.getItem('leon_favourites') || '[]'),
+  history: JSON.parse(localStorage.getItem('leon_history') || '[]'),
+};
+
+let followersChart, typeChart;
+
+/* =========================================================
+   INIT
+   ========================================================= */
+document.addEventListener('DOMContentLoaded', () => {
+  initTheme();
+  checkConfig();
+  bindNav();
+  bindHeaderButtons();
+  bindSearch();
+  renderAll();
+});
+
+/* =========================================================
+   THEME
+   ========================================================= */
+function initTheme(){
+  const saved = localStorage.getItem('leon_theme') || 'dark';
+  document.documentElement.setAttribute('data-theme', saved);
+  updateThemeBtn(saved);
+}
+function updateThemeBtn(theme){
+  document.getElementById('themeBtn').textContent = theme === 'dark' ? '🌙 Dark Mode' : '☀️ Light Mode';
+}
+function bindHeaderButtons(){
+  document.getElementById('themeBtn').addEventListener('click', () => {
+    const current = document.documentElement.getAttribute('data-theme');
+    const next = current === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', next);
+    localStorage.setItem('leon_theme', next);
+    updateThemeBtn(next);
+    // Chart.js doesn't auto-restyle on theme change; rebuild charts if visible
+    if (document.getElementById('view-analytics').classList.contains('active')) {
+      renderCharts();
+    }
+  });
+
+  document.getElementById('clearBtn').addEventListener('click', () => {
+    state.profiles = [];
+    sessionStorage.removeItem('leon_profiles');
+    document.getElementById('searchInput').value = '';
+    setStatus('');
+    renderAll();
+  });
+}
+
+/* =========================================================
+   CONFIG WARNING
+   ========================================================= */
+function checkConfig(){
+  const warn = document.getElementById('configWarning');
+  if (!CONFIG.APIFY_TOKEN || !CONFIG.APIFY_ACTOR_ID) {
+    warn.classList.add('show');
+  } else {
+    warn.classList.remove('show');
+  }
+}
+
+/* =========================================================
+   NAV
+   ========================================================= */
+function bindNav(){
+  document.querySelectorAll('nav a').forEach(link => {
+    link.addEventListener('click', (e) => {
+      e.preventDefault();
+      document.querySelectorAll('nav a').forEach(a => a.classList.remove('active'));
+      link.classList.add('active');
+      const view = link.dataset.view;
+      document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+      document.getElementById('view-' + view).classList.add('active');
+      if (view === 'analytics') renderCharts();
+      if (view === 'history') renderHistory();
+      if (view === 'favourites') renderFavourites();
+    });
+  });
+}
+
+/* =========================================================
+   SEARCH / APIFY CALL
+   ========================================================= */
+function bindSearch(){
+  document.getElementById('searchBtn').addEventListener('click', runSearch);
+  document.getElementById('searchInput').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') runSearch();
+  });
+}
+
+function parseUsernames(raw){
+  return raw
+    .split(',')
+    .map(s => s.trim())
+    .filter(Boolean)
+    .map(s => {
+      s = s.replace(/^@/, '');
+      const urlMatch = s.match(/instagram\.com\/([A-Za-z0-9._]+)/i);
+      return urlMatch ? urlMatch[1] : s;
+    })
+    .filter(Boolean);
+}
+
+async function runSearch(){
+  const raw = document.getElementById('searchInput').value.trim();
+  if (!raw) { setStatus('Enter at least one username.', true); return; }
+
+  if (!CONFIG.APIFY_TOKEN || !CONFIG.APIFY_ACTOR_ID) {
+    setStatus('Apify isn\'t connected. Set APIFY_TOKEN and APIFY_ACTOR_ID in the script.', true);
+    return;
+  }
+
+  const usernames = parseUsernames(raw);
+  if (!usernames.length) { setStatus('Couldn\'t find any valid usernames in that input.', true); return; }
+
+  const btn = document.getElementById('searchBtn');
+  btn.disabled = true;
+  setStatus(`Fetching ${usernames.length} profile(s) via Apify…`);
+
+  try {
+    const url = `https://api.apify.com/v2/actors/${encodeURIComponent(CONFIG.APIFY_ACTOR_ID)}/run-sync-get-dataset-items?token=${encodeURIComponent(CONFIG.APIFY_TOKEN)}`;
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      // NOTE: input field name depends on which Instagram actor you're using.
+      // "usernames" matches Apify's own instagram-profile-scraper. Adjust if
+      // your chosen actor expects a different input shape (check its README/input schema).
+      body: JSON.stringify({ usernames })
+    });
+
+    if (!res.ok) {
+      const errText = await res.text();
+      throw new Error(`Apify returned ${res.status}: ${errText.slice(0, 200)}`);
+    }
+
+    const items = await res.json();
+    if (!Array.isArray(items) || items.length === 0) {
+      setStatus('Apify ran successfully but returned no items. Check the actor\'s output format.', true);
+      btn.disabled = false;
+      return;
+    }
+
+    const normalized = items.map(normalizeProfile).filter(Boolean);
+    if (!normalized.length) {
+      setStatus('Got a response, but couldn\'t recognize the profile fields. The actor\'s output shape may differ from what this dashboard expects — check the console.', true);
+      console.log('Raw Apify items:', items);
+      btn.disabled = false;
+      return;
+    }
+
+    normalized.forEach(p => {
+      const existingIdx = state.profiles.findIndex(existing => existing.username === p.username);
+      if (existingIdx >= 0) state.profiles[existingIdx] = p;
+      else state.profiles.push(p);
+    });
+    sessionStorage.setItem('leon_profiles', JSON.stringify(state.profiles));
+
+    state.history.unshift({ query: raw, count: normalized.length, time: new Date().toISOString() });
+    state.history = state.history.slice(0, 50);
+    localStorage.setItem('leon_history', JSON.stringify(state.history));
+
+    setStatus(`Loaded ${normalized.length} profile(s).`);
+    renderAll();
+  } catch (err) {
+    console.error(err);
+    setStatus(`Search failed: ${err.message}`, true);
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+// Best-effort mapping from Apify's typical Instagram-scraper fields.
+// Different actors name fields differently — adjust the fallbacks below
+// to match whichever actor you connect.
+function normalizeProfile(item){
+  const username = item.username || item.handle || item.ownerUsername;
+  if (!username) return null;
+
+  let type = 'personal';
+  if (item.isBusinessAccount) type = 'business';
+  else if (item.isCreatorAccount || item.accountType === 'creator') type = 'creator';
+
+  return {
+    username,
+    fullName: item.fullName || item.full_name || username,
+    followers: Number(item.followersCount ?? item.followers ?? 0),
+    posts: Number(item.postsCount ?? item.posts ?? 0),
+    profilePicUrl: item.profilePicUrl || item.profile_pic_url || '',
+    type,
+    bio: item.biography || ''
+  };
+}
+
+function setStatus(msg, isError = false){
+  const el = document.getElementById('statusLine');
+  el.textContent = msg;
+  el.classList.toggle('error', !!isError);
+}
+
+/* =========================================================
+   FAVOURITES
+   ========================================================= */
+function toggleFavourite(username){
+  const idx = state.favourites.findIndex(f => f.username === username);
+  if (idx >= 0) {
+    state.favourites.splice(idx, 1);
+  } else {
+    const p = state.profiles.find(p => p.username === username);
+    if (p) state.favourites.push(p);
+  }
+  localStorage.setItem('leon_favourites', JSON.stringify(state.favourites));
+  renderAll();
+}
+
+/* =========================================================
+   RENDER
+   ========================================================= */
+function renderAll(){
+  renderStats();
+  renderProfiles();
+  renderFavourites();
+  if (document.getElementById('view-analytics').classList.contains('active')) renderCharts();
+  if (document.getElementById('view-history').classList.contains('active')) renderHistory();
+}
+
+function fmtNumber(n){
+  if (n >= 1e6) return (n / 1e6).toFixed(1).replace(/\.0$/, '') + 'M';
+  if (n >= 1e3) return (n / 1e3).toFixed(1).replace(/\.0$/, '') + 'K';
+  return String(n);
+}
+
+function renderStats(){
+  const profiles = state.profiles;
+  document.getElementById('totalProfiles').textContent = profiles.length;
+  document.getElementById('totalFollowers').textContent = fmtNumber(profiles.reduce((s, p) => s + p.followers, 0));
+  document.getElementById('totalPosts').textContent = fmtNumber(profiles.reduce((s, p) => s + p.posts, 0));
+  document.getElementById('businessCount').textContent = profiles.filter(p => p.type === 'business').length;
+  document.getElementById('creatorCount').textContent = profiles.filter(p => p.type === 'creator').length;
+  document.getElementById('personalCount').textContent = profiles.filter(p => p.type === 'personal').length;
+}
+
+function profileCardHTML(p){
+  const isFav = state.favourites.some(f => f.username === p.username);
+  const initials = p.fullName.split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase();
+  return `
+    <div class="profile-card">
+      <div class="profile-head">
+        ${p.profilePicUrl
+          ? `<img class="avatar" src="${p.profilePicUrl}" alt="${p.username}" onerror="this.outerHTML='<div class=avatar>${initials}</div>'">`
+          : `<div class="avatar">${initials}</div>`}
+        <div>
+          <div class="profile-name">${p.fullName}</div>
+          <div class="profile-handle">@${p.username}</div>
+        </div>
+        <button class="fav-btn ${isFav ? 'active' : ''}" onclick="toggleFavourite('${p.username}')" title="Toggle favourite">★</button>
+      </div>
+      <div class="profile-stats">
+        <div><span>${fmtNumber(p.followers)}</span><label>Followers</label></div>
+        <div><span>${fmtNumber(p.posts)}</span><label>Posts</label></div>
+      </div>
+      <span class="badge ${p.type}">${p.type}</span>
+    </div>
+  `;
+}
+
+function renderProfiles(){
+  const grid = document.getElementById('profilesGrid');
+  if (!state.profiles.length) {
+    grid.innerHTML = '<div class="empty-state">No profiles searched yet. Try searching a username above.</div>';
+    return;
+  }
+  grid.innerHTML = state.profiles.map(profileCardHTML).join('');
+}
+
+function renderFavourites(){
+  const grid = document.getElementById('favouritesGrid');
+  if (!state.favourites.length) {
+    grid.innerHTML = '<div class="empty-state">No favourites yet. Star a profile from the Dashboard.</div>';
+    return;
+  }
+  grid.innerHTML = state.favourites.map(profileCardHTML).join('');
+}
+
+function renderHistory(){
+  const list = document.getElementById('historyList');
+  if (!state.history.length) {
+    list.innerHTML = '<div class="empty-state">No searches yet.</div>';
+    return;
+  }
+  list.innerHTML = state.history.map((h, i) => `
+    <div class="list-row">
+      <div class="left">
+        <b>${h.query}</b>
+        <span>${new Date(h.time).toLocaleString()} · ${h.count} result(s)</span>
+      </div>
+      <div class="actions">
+        <button onclick="rerunHistory(${i})">Search again</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function rerunHistory(i){
+  const entry = state.history[i];
+  if (!entry) return;
+  document.getElementById('searchInput').value = entry.query;
+  document.querySelector('nav a[data-view="dashboard"]').click();
+  runSearch();
+}
+
+function renderCharts(){
+  const ctx1 = document.getElementById('followersChart');
+  const ctx2 = document.getElementById('typeChart');
+  if (!ctx1 || !ctx2) return;
+
+  const styles = getComputedStyle(document.documentElement);
+  const textColor = styles.getPropertyValue('--text').trim();
+  const gridColor = styles.getPropertyValue('--border').trim();
+
+  if (followersChart) followersChart.destroy();
+  if (typeChart) typeChart.destroy();
+
+  followersChart = new Chart(ctx1, {
+    type: 'bar',
+    data: {
+      labels: state.profiles.map(p => '@' + p.username),
+      datasets: [{
+        label: 'Followers',
+        data: state.profiles.map(p => p.followers),
+        backgroundColor: '#7C3AED',
+        borderRadius: 6
+      }]
+    },
+    options: {
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { ticks: { color: textColor }, grid: { color: gridColor } },
+        y: { ticks: { color: textColor }, grid: { color: gridColor } }
+      }
+    }
+  });
+
+  const counts = {
+    business: state.profiles.filter(p => p.type === 'business').length,
+    creator: state.profiles.filter(p => p.type === 'creator').length,
+    personal: state.profiles.filter(p => p.type === 'personal').length,
+  };
+
+  typeChart = new Chart(ctx2, {
+    type: 'doughnut',
+    data: {
+      labels: ['Business', 'Creator', 'Personal'],
+      datasets: [{
+        data: [counts.business, counts.creator, counts.personal],
+        backgroundColor: ['#7C3AED', '#E1306C', '#F77737'],
+        borderWidth: 0
+      }]
+    },
+    options: {
+      plugins: { legend: { position: 'bottom', labels: { color: textColor } } }
+    }
+  });
+}
+</script>
+</body>
+</html>
