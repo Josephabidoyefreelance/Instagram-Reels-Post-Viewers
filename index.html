@@ -254,10 +254,30 @@ button:disabled{opacity:.5;cursor:not-allowed;transform:none;}
   background:none;border:none;font-size:18px;padding:4px;color:var(--muted);
 }
 .fav-btn.active{color:var(--accent-3);}
-.profile-stats{display:flex;gap:16px;margin-top:14px;}
-.profile-stats div{flex:1;}
+.profile-stats{display:flex;gap:16px;margin-top:14px;flex-wrap:wrap;}
+.profile-stats div{flex:1;min-width:70px;}
 .profile-stats span{display:block;font-family:var(--font-mono);font-weight:600;font-size:15px;}
 .profile-stats label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;}
+
+.posts-toggle{
+  width:100%;margin-top:14px;padding:8px 12px;font-size:12px;
+  justify-content:center;background:var(--surface-2);
+}
+.posts-grid{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px;
+}
+.post-tile{
+  position:relative;border-radius:8px;overflow:hidden;aspect-ratio:1/1;
+  background:var(--surface-2);border:1px solid var(--border);
+}
+.post-tile img{width:100%;height:100%;object-fit:cover;display:block;}
+.post-tile .post-overlay{
+  position:absolute;bottom:0;left:0;right:0;
+  background:linear-gradient(to top,rgba(0,0,0,.75),transparent);
+  padding:6px;font-size:10px;color:#fff;display:flex;gap:8px;
+}
+.post-tile .post-overlay span{display:flex;align-items:center;gap:3px;font-family:var(--font-mono);}
+.post-tile a{position:absolute;inset:0;}
 .badge{
   display:inline-block;margin-top:12px;padding:3px 10px;border-radius:20px;
   font-size:11px;font-weight:600;border:1px solid var(--border);color:var(--muted);
@@ -293,14 +313,65 @@ button:disabled{opacity:.5;cursor:not-allowed;transform:none;}
 
 /* ============ FOOTER ============ */
 footer{
-  margin-top:40px;padding-top:20px;border-top:1px solid var(--border);
-  text-align:center;color:var(--muted);font-size:12px;
+  position:fixed;
+  bottom:0;
+  left:0;
+  right:0;
+  z-index:100;
+  background:var(--surface);
+  border-top:1px solid var(--border);
+  text-align:center;
+  color:var(--text);
+  font-size:13px;
+  font-weight:700;
+  padding:12px 16px;
+  box-shadow:0 -4px 16px rgba(0,0,0,.15);
 }
+.main{padding-bottom:70px;}
 
+/* ============ RESPONSIVE ============ */
 @media(max-width:800px){
   body{flex-direction:column;}
-  .sidebar{width:100%;height:auto;position:relative;}
-  .main{padding:24px;}
+  .sidebar{
+    width:100%;
+    height:auto;
+    position:relative;
+    padding:16px;
+  }
+  .sidebar-footer{display:none;}
+  .logo h1{font-size:22px;}
+  nav{margin-top:18px;flex-direction:row;flex-wrap:wrap;gap:8px;}
+  nav a{padding:8px 12px;font-size:13px;border-left:none;border-bottom:3px solid transparent;}
+  nav a.active{border-left:none;border-bottom:3px solid;border-image:var(--gradient) 1;}
+
+  .main{padding:20px 16px 80px;}
+  header{flex-direction:column;align-items:stretch;gap:12px;}
+  header h1{font-size:21px;}
+  .headerButtons{width:100%;}
+  .headerButtons button{flex:1;justify-content:center;}
+
+  .search-box{flex-direction:column;}
+  .search-box button{width:100%;justify-content:center;}
+  .small{line-height:1.7;}
+
+  .overview{grid-template-columns:repeat(2,1fr);gap:10px;}
+  .card{padding:14px 16px;}
+  .card h1{font-size:22px;}
+
+  .profiles-grid{grid-template-columns:1fr;}
+  .chart-grid{grid-template-columns:1fr;}
+
+  .list-row{flex-direction:column;align-items:flex-start;gap:10px;}
+  .list-row .actions{width:100%;}
+  .list-row .actions button{width:100%;justify-content:center;}
+
+  footer{font-size:11.5px;padding:10px 12px;}
+}
+
+@media(max-width:420px){
+  .overview{grid-template-columns:1fr 1fr;}
+  .card h1{font-size:19px;}
+  nav a{flex:1 1 45%;text-align:center;justify-content:center;}
 }
 </style>
 </head>
@@ -337,7 +408,7 @@ footer{
   </header>
 
   <div class="config-warning" id="configWarning">
-    ⚠ Apify isn't connected yet. Open this file and set <code>APIFY_TOKEN</code> and <code>APIFY_ACTOR_ID</code> near the top of the <code>&lt;script&gt;</code> block. Search will not return real data until both are filled in.
+    ⚠ Can't reach your backend server yet. Make sure it's running (in the backend folder: <code>node server.js</code>).
   </div>
 
   <!-- DASHBOARD VIEW -->
@@ -359,6 +430,9 @@ footer{
       <div class="card"><h3>Total Profiles</h3><h1 id="totalProfiles">0</h1></div>
       <div class="card"><h3>Total Followers</h3><h1 id="totalFollowers">0</h1></div>
       <div class="card"><h3>Total Posts</h3><h1 id="totalPosts">0</h1></div>
+      <div class="card"><h3>Total Likes</h3><h1 id="totalLikes">0</h1></div>
+      <div class="card"><h3>Total Comments</h3><h1 id="totalComments">0</h1></div>
+      <div class="card"><h3>Total Views</h3><h1 id="totalViews">0</h1></div>
       <div class="card"><h3>Business</h3><h1 id="businessCount">0</h1></div>
       <div class="card"><h3>Creator</h3><h1 id="creatorCount">0</h1></div>
       <div class="card"><h3>Personal</h3><h1 id="personalCount">0</h1></div>
@@ -402,20 +476,13 @@ footer{
 
 <script>
 /* =========================================================
-   CONFIG — fill these in with your real Apify credentials.
-   Console → Integrations for the token.
-   Actor ID looks like "username~actor-name" or a plain ID.
+   CONFIG — where your backend server is running.
+   Change this if your server runs on a different port
+   or is deployed somewhere other than localhost.
    ========================================================= */
 const CONFIG = {
-  APIFY_TOKEN: "",        // <-- put your Apify API token here
-  APIFY_ACTOR_ID: "",     // <-- put your Instagram scraper actor ID here
+  BACKEND_URL: "https://instagram-reels-post-viewers.onrender.com",
 };
-
-/* NOTE: this calls Apify directly from the browser, so your token is
-   visible in devtools/network tab. Fine for local/internal use.
-   For anything public-facing, proxy this through a small backend
-   (like your existing Netlify function) instead of calling Apify
-   straight from client-side JS. */
 
 /* =========================================================
    STATE
@@ -474,14 +541,18 @@ function bindHeaderButtons(){
 }
 
 /* =========================================================
-   CONFIG WARNING
+   BACKEND CONNECTION CHECK
    ========================================================= */
-function checkConfig(){
+async function checkConfig(){
   const warn = document.getElementById('configWarning');
-  if (!CONFIG.APIFY_TOKEN || !CONFIG.APIFY_ACTOR_ID) {
-    warn.classList.add('show');
-  } else {
+  try {
+    // Just checking the server responds at all — not hitting a real
+    // profile endpoint, so this doesn't burn an Apify request on load.
+    await fetch(CONFIG.BACKEND_URL, { method: 'GET', mode: 'cors' });
     warn.classList.remove('show');
+  } catch (err) {
+    warn.classList.add('show');
+    warn.textContent = `⚠ Can't reach your backend at ${CONFIG.BACKEND_URL}. Make sure your server is running (in the backend folder: node server.js).`;
   }
 }
 
@@ -531,89 +602,70 @@ async function runSearch(){
   const raw = document.getElementById('searchInput').value.trim();
   if (!raw) { setStatus('Enter at least one username.', true); return; }
 
-  if (!CONFIG.APIFY_TOKEN || !CONFIG.APIFY_ACTOR_ID) {
-    setStatus('Apify isn\'t connected. Set APIFY_TOKEN and APIFY_ACTOR_ID in the script.', true);
-    return;
-  }
-
   const usernames = parseUsernames(raw);
   if (!usernames.length) { setStatus('Couldn\'t find any valid usernames in that input.', true); return; }
 
   const btn = document.getElementById('searchBtn');
   btn.disabled = true;
-  setStatus(`Fetching ${usernames.length} profile(s) via Apify…`);
+  setStatus(`Fetching ${usernames.length} profile(s)…`);
 
-  try {
-    const url = `https://api.apify.com/v2/actors/${encodeURIComponent(CONFIG.APIFY_ACTOR_ID)}/run-sync-get-dataset-items?token=${encodeURIComponent(CONFIG.APIFY_TOKEN)}`;
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      // NOTE: input field name depends on which Instagram actor you're using.
-      // "usernames" matches Apify's own instagram-profile-scraper. Adjust if
-      // your chosen actor expects a different input shape (check its README/input schema).
-      body: JSON.stringify({ usernames })
-    });
+  const loaded = [];
+  const failed = [];
 
-    if (!res.ok) {
-      const errText = await res.text();
-      throw new Error(`Apify returned ${res.status}: ${errText.slice(0, 200)}`);
+  for (const username of usernames) {
+    try {
+      const res = await fetch(`${CONFIG.BACKEND_URL}/api/profile/${encodeURIComponent(username)}`);
+      const data = await res.json();
+
+      if (!res.ok || data.success === false) {
+        failed.push(username);
+        continue;
+      }
+
+      loaded.push(normalizeProfile(data));
+    } catch (err) {
+      console.error(`Failed to fetch ${username}:`, err);
+      failed.push(username);
     }
+  }
 
-    const items = await res.json();
-    if (!Array.isArray(items) || items.length === 0) {
-      setStatus('Apify ran successfully but returned no items. Check the actor\'s output format.', true);
-      btn.disabled = false;
-      return;
-    }
-
-    const normalized = items.map(normalizeProfile).filter(Boolean);
-    if (!normalized.length) {
-      setStatus('Got a response, but couldn\'t recognize the profile fields. The actor\'s output shape may differ from what this dashboard expects — check the console.', true);
-      console.log('Raw Apify items:', items);
-      btn.disabled = false;
-      return;
-    }
-
-    normalized.forEach(p => {
-      const existingIdx = state.profiles.findIndex(existing => existing.username === p.username);
-      if (existingIdx >= 0) state.profiles[existingIdx] = p;
-      else state.profiles.push(p);
-    });
+  if (loaded.length) {
+    state.profiles = loaded;
     sessionStorage.setItem('leon_profiles', JSON.stringify(state.profiles));
 
-    state.history.unshift({ query: raw, count: normalized.length, time: new Date().toISOString() });
+    state.history.unshift({ query: raw, count: loaded.length, time: new Date().toISOString() });
     state.history = state.history.slice(0, 50);
     localStorage.setItem('leon_history', JSON.stringify(state.history));
-
-    setStatus(`Loaded ${normalized.length} profile(s).`);
-    renderAll();
-  } catch (err) {
-    console.error(err);
-    setStatus(`Search failed: ${err.message}`, true);
-  } finally {
-    btn.disabled = false;
   }
+
+  if (failed.length && loaded.length) {
+    setStatus(`Loaded ${loaded.length}. Failed: ${failed.join(', ')}.`, true);
+  } else if (failed.length) {
+    setStatus(`Couldn't load any profiles. Is your backend running at ${CONFIG.BACKEND_URL}?`, true);
+  } else {
+    setStatus(`Loaded ${loaded.length} profile(s).`);
+  }
+
+  renderAll();
+  checkConfig();
+  btn.disabled = false;
 }
 
-// Best-effort mapping from Apify's typical Instagram-scraper fields.
-// Different actors name fields differently — adjust the fallbacks below
-// to match whichever actor you connect.
-function normalizeProfile(item){
-  const username = item.username || item.handle || item.ownerUsername;
-  if (!username) return null;
-
-  let type = 'personal';
-  if (item.isBusinessAccount) type = 'business';
-  else if (item.isCreatorAccount || item.accountType === 'creator') type = 'creator';
-
+// Maps the shape your backend returns (from instagramService.js) to
+// what this dashboard displays.
+function normalizeProfile(data){
   return {
-    username,
-    fullName: item.fullName || item.full_name || username,
-    followers: Number(item.followersCount ?? item.followers ?? 0),
-    posts: Number(item.postsCount ?? item.posts ?? 0),
-    profilePicUrl: item.profilePicUrl || item.profile_pic_url || '',
-    type,
-    bio: item.biography || ''
+    username: data.username,
+    fullName: data.fullName || data.username,
+    followers: Number(data.followers || 0),
+    posts: Number(data.posts || 0),
+    profilePicUrl: data.profilePicture || '',
+    type: (data.accountType || 'Personal').toLowerCase(),
+    bio: data.bio || '',
+    totalLikes: Number(data.totalLikes || 0),
+    totalComments: Number(data.totalComments || 0),
+    totalViews: Number(data.totalViews || 0),
+    recentPosts: Array.isArray(data.recentPosts) ? data.recentPosts : []
   };
 }
 
@@ -660,6 +712,9 @@ function renderStats(){
   document.getElementById('totalProfiles').textContent = profiles.length;
   document.getElementById('totalFollowers').textContent = fmtNumber(profiles.reduce((s, p) => s + p.followers, 0));
   document.getElementById('totalPosts').textContent = fmtNumber(profiles.reduce((s, p) => s + p.posts, 0));
+  document.getElementById('totalLikes').textContent = fmtNumber(profiles.reduce((s, p) => s + (p.totalLikes || 0), 0));
+  document.getElementById('totalComments').textContent = fmtNumber(profiles.reduce((s, p) => s + (p.totalComments || 0), 0));
+  document.getElementById('totalViews').textContent = fmtNumber(profiles.reduce((s, p) => s + (p.totalViews || 0), 0));
   document.getElementById('businessCount').textContent = profiles.filter(p => p.type === 'business').length;
   document.getElementById('creatorCount').textContent = profiles.filter(p => p.type === 'creator').length;
   document.getElementById('personalCount').textContent = profiles.filter(p => p.type === 'personal').length;
@@ -668,6 +723,9 @@ function renderStats(){
 function profileCardHTML(p){
   const isFav = state.favourites.some(f => f.username === p.username);
   const initials = p.fullName.split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase();
+  const postsId = `posts-${p.username}`;
+  const hasPosts = Array.isArray(p.recentPosts) && p.recentPosts.length > 0;
+
   return `
     <div class="profile-card">
       <div class="profile-head">
@@ -683,10 +741,35 @@ function profileCardHTML(p){
       <div class="profile-stats">
         <div><span>${fmtNumber(p.followers)}</span><label>Followers</label></div>
         <div><span>${fmtNumber(p.posts)}</span><label>Posts</label></div>
+        <div><span>${fmtNumber(p.totalLikes || 0)}</span><label>Likes (recent)</label></div>
+        <div><span>${fmtNumber(p.totalComments || 0)}</span><label>Comments (recent)</label></div>
+        <div><span>${fmtNumber(p.totalViews || 0)}</span><label>Views (recent)</label></div>
       </div>
       <span class="badge ${p.type}">${p.type}</span>
+      ${hasPosts ? `
+        <button class="posts-toggle" onclick="togglePosts('${postsId}')">📷 Show Recent Posts (${p.recentPosts.length})</button>
+        <div class="posts-grid" id="${postsId}" style="display:none;">
+          ${p.recentPosts.map(post => `
+            <div class="post-tile">
+              ${post.thumbnail ? `<img src="${post.thumbnail}" alt="post" onerror="this.style.display='none'">` : ''}
+              <div class="post-overlay">
+                <span>❤️ ${fmtNumber(post.likes)}</span>
+                <span>💬 ${fmtNumber(post.comments)}</span>
+                ${post.views ? `<span>▶️ ${fmtNumber(post.views)}</span>` : ''}
+              </div>
+              ${post.url ? `<a href="${post.url}" target="_blank" rel="noopener"></a>` : ''}
+            </div>
+          `).join('')}
+        </div>
+      ` : ''}
     </div>
   `;
+}
+
+function togglePosts(id){
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.style.display = el.style.display === 'none' ? 'grid' : 'none';
 }
 
 function renderProfiles(){
