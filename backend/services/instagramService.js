@@ -17,8 +17,6 @@ function mapPosts(rawPosts) {
     }));
 }
 
-// Overwrites the "views" field on any post that the dedicated Reel Scraper
-// actually found real numbers for. Photo posts / unmatched posts are untouched.
 function mergeReelViews(recentPosts, reelItems) {
     const viewsByShortCode = {};
 
@@ -43,17 +41,24 @@ async function getProfile(username) {
 
     if (cached) return cached;
 
-    const profile = await providerService.fetchProfile(username);
+    // Run both Apify actors AT THE SAME TIME instead of one after another.
+    // Total wait time becomes roughly the slower of the two, not the sum of both.
+    const [profileResult, reelsResult] = await Promise.allSettled([
+        providerService.fetchProfile(username),
+        reelService.fetchReels(username)
+    ]);
 
+    if (profileResult.status !== "fulfilled") {
+        throw profileResult.reason;
+    }
+
+    const profile = profileResult.value;
     let recentPosts = mapPosts(profile.latestPosts);
 
-    // Reel views come from a separate dedicated actor. If it fails or the
-    // account has no reels, we just keep whatever the profile scraper gave us.
-    try {
-        const reels = await reelService.fetchReels(username);
-        recentPosts = mergeReelViews(recentPosts, reels);
-    } catch (err) {
-        console.error(`Reel view fetch failed for ${username}:`, err.message);
+    if (reelsResult.status === "fulfilled") {
+        recentPosts = mergeReelViews(recentPosts, reelsResult.value);
+    } else {
+        console.error(`Reel view fetch failed for ${username}:`, reelsResult.reason?.message || reelsResult.reason);
     }
 
     const totalLikes = recentPosts.reduce((sum, p) => sum + (p.likes || 0), 0);
